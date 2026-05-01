@@ -1,10 +1,23 @@
+# Executables
 *.exe
 *.o
 *.a
 *.lnk
+
+# Visual Studio
 *.ipch
 *.suo
 *.user
 .vs/
+
+# VS Code
 .vscode/
+
+# Build folders
+bin/
 build/
+
+# Other
+*.dll
+*.log
+*.tmp
