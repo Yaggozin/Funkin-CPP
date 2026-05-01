@@ -79,6 +79,8 @@ public:
     Conductor* conductor;
     std::vector<ChartNote> songNotes;
     std::vector<Section> songSections;
+
+    float singTime = 0.0f;
     
     float scrollSpeed = 2.4f;
     float health = 1.0f;
@@ -98,6 +100,7 @@ public:
 
     // Intro & Ending Logic
     bool skipIntro = false;
+    bool countdownPlayed[4] = {false};
     bool startingSong = true;
     bool isEnding = false;
     float startTimer = 0.0f;

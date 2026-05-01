@@ -1,0 +1,4 @@
+make debug    # Compile with debug symbols for you
+make release  # Compile optimized version for your friend
+make all      # Compile both
+make clean    # Remove compiled files

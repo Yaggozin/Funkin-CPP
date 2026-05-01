@@ -22,6 +22,12 @@ extern GameState currentState;
 
 PlayState::PlayState() {
 
+    /*
+    * PlayState()
+    * Initializes all gameplay systems including music, characters, strumlines
+    * and cameras for a new song session
+    */
+
     // Music
     std::string songName = "bopeebo"; 
     std::string jsonPath = Paths::json(songName);
@@ -190,7 +196,9 @@ void PlayState::LoadSong(std::string songName) {
     auto song = json["song"];
     conductor->bpm = (float)song["bpm"].number_value();
     conductor->crochet = (60.0f / conductor->bpm) * 1000.0f;
+
     conductor->stepCrochet = conductor->crochet / 4.0f;
+    singTime = (5.0f * conductor->stepCrochet) / 1000.0f;
     
     if (song["speed"].is_number()) {
         scrollSpeed = (float)song["speed"].number_value();
@@ -232,10 +240,6 @@ void PlayState::LoadSong(std::string songName) {
     });
 
     std::cout << "Song Loaded: " << songName << " | Notes: " << songNotes.size() << " | Sections: " << songSections.size() << std::endl;
-
-    PlayMusicStream(inst);
-    PlayMusicStream(voices);
-    startingSong = false;
 }
 
 void PlayState::UpdateCamera(float dt) {
@@ -278,10 +282,24 @@ void PlayState::UpdateCamera(float dt) {
 
 void PlayState::Update() {
 
+    /*
+    * Update()
+    * Main game loop for play state. Handles in this order:
+    * - Input processing
+    * - Character updates (only if not paused)
+    * - Music sync and note logic
+    * - Camera movement
+    * - UI and ending conditions
+    */
+
+    // TraceLog(LOG_INFO, "Update Playstate");
+
     float dt = GetFrameTime();
     float sw = (float)GetScreenWidth(); float sh = (float)GetScreenHeight();
 
-    // Smooth tween
+    // TraceLog(LOG_INFO, "Updating strumlines");
+
+    // Smooth scroll lerp
     float speed = 5.0f; // quanto maior, mais rápido
     scrollLerp += (scrollTarget - scrollLerp) * GetFrameTime() * speed;
 
@@ -289,10 +307,14 @@ void PlayState::Update() {
     if (enemyStrums) {
         enemyStrums->xOffset = 100 + offsetX;
         enemyStrums->Update(dt);
+    } else {
+        TraceLog(LOG_ERROR, "enemyStrums is NULL!");
     }
     if (playerStrums) {
         playerStrums->xOffset = 730 + offsetX;
         playerStrums->Update(dt);
+    } else {
+        TraceLog(LOG_ERROR, "playerStrums is NULL!");
     }
 
     float upY = 50;
@@ -324,11 +346,11 @@ void PlayState::Update() {
 
         if (sectionIndex < songSections.size()) {
             // 0 = Opponent, 1 = Player
-            currentTurn = songSections[sectionIndex].mustHitSection ? 1 : 0;
+            currentTurn = songSections[sectionIndex].mustHitSection ? 0 : 1;
         }
     }
 
-    player->Update(); opponent->Update(); gf->Update();
+    // player->Update(); opponent->Update(); gf->Update();
 
     healthBar->Update(health, score);
     if (health > 2.0f) health = 2.0f;
@@ -424,6 +446,18 @@ void PlayState::DrawNotes() {
         if (!note.active) continue;
 
         StrumLine* targetStrum = note.mustHit ? playerStrums : enemyStrums;
+
+        // Safety check - previne crash
+        if (targetStrum == nullptr) {
+            TraceLog(LOG_WARNING, "DrawNotes: targetStrum is NULL for note");
+            continue;
+        }
+
+        // Safety check - array bounds
+        if (note.noteData < 0 || note.noteData > 3) {
+            TraceLog(LOG_WARNING, "DrawNotes: invalid noteData %d", note.noteData);
+            continue;
+        }
         
         float noteX = targetStrum->arrows[note.noteData].position.x;
         float direction = Lerp(-1.0f, 1.0f, scrollLerp);
@@ -466,7 +500,10 @@ void PlayState::UpdateInput() {
 
     if (IsKeyPressed(KEY_ENTER)) {
         paused = !paused;
+        return;
     }
+
+    if (paused) return;
 
     // Restart song
     if (IsKeyPressed(KEY_R)) {
@@ -493,7 +530,6 @@ void PlayState::UpdateNotes() {
 
     // Vars
     hitThisFrame = false;
-    float singTime = (5.0f * conductor->stepCrochet) / 1000.0f;
 
     // Note Logic
     for (auto& note : songNotes) {
@@ -559,7 +595,6 @@ void PlayState::UpdateNotes() {
 }
 
 void PlayState::HandleHit(ChartNote& note) {
-    float singTime = (5.0f * conductor->stepCrochet) / 1000.0f;
 
     note.active = false;
 
@@ -575,7 +610,6 @@ void PlayState::HandleHit(ChartNote& note) {
 }
 
 void PlayState::HandleMiss(int direction) {
-    float singTime = (5.0f * conductor->stepCrochet) / 1000.0f;
 
     health -= 0.05f;
     score -= 350;
@@ -640,19 +674,23 @@ void PlayState::Countdown(float dt) {
 
     startTimer += dt * 1000;
 
-    int currentCountdown = (int)(std::abs(startTimer) / conductor->crochet);
-
-    if (currentCountdown != countdownLevel && startTimer < 0) {
-        countdownLevel = currentCountdown;
-
-        switch(countdownLevel) {
-            case 3: PlaySound(introThree); break;
-            case 2: PlaySound(introTwo); break;
-            case 1: PlaySound(introOne); break;
-            case 0: PlaySound(introGo); break;
+    float msPerBeat = conductor->crochet;
+    float timeRemaining = -startTimer;
+    
+    for (int i = 3; i >= 0; i--) {
+        float triggerTime = i * msPerBeat;
+        if (timeRemaining <= triggerTime && !countdownPlayed[i]) {
+            countdownPlayed[i] = true;
+            switch(i) {
+                case 3: PlaySound(introThree); break;
+                case 2: PlaySound(introTwo); break;
+                case 1: PlaySound(introOne); break;
+                case 0: PlaySound(introGo); break;
+            }
+            break;
         }
     }
-
+    
     if (startTimer >= 0) {
         startingSong = false;
         PlayMusicStream(inst);
@@ -702,6 +740,8 @@ bool PlayState::CanToggleScroll() {
 }
 
 void PlayState::Draw() {
+    // TraceLog(LOG_INFO, "Draw");
+
     ClearBackground(BLACK);
 
     // Render Gameplay
@@ -709,6 +749,7 @@ void PlayState::Draw() {
         /*
         *   Characters and Stage here.
         */
+        // TraceLog(LOG_INFO, "Drawing stage and characters");
         stage->Draw(camGame);
         gf->Draw();
         opponent->Draw();
@@ -720,8 +761,9 @@ void PlayState::Draw() {
         /*
         *   StrumLines and Notes here.
         */
-        enemyStrums->Draw();
-        playerStrums->Draw();
+        // TraceLog(LOG_INFO, "Drawing strumlines and notes");
+        if (enemyStrums) enemyStrums->Draw();
+        if (playerStrums) playerStrums->Draw();
         DrawNotes();
     EndMode2D();
 
