@@ -1,0 +1,29 @@
+{
+  "name": "Daddy Dearest",
+  "assetPath": "DADDY_DEAREST",
+  "singTime": 8.0,
+  "offsets": [13, 3],
+  "cameraOffsets": [11, 6],
+  "animations": [
+    {
+      "name": "idle",
+      "prefix": "Dad idle dance"
+    },
+    {
+      "name": "singLEFT",
+      "prefix": "Dad Sing Note LEFT"
+    },
+    {
+      "name": "singDOWN",
+      "prefix": "Dad Sing Note DOWN"
+    },
+    {
+      "name": "singUP",
+      "prefix": "Dad Sing Note UP"
+    },
+    {
+      "name": "singRIGHT",
+      "prefix": "Dad Sing Note RIGHT"
+    }
+  ]
+}

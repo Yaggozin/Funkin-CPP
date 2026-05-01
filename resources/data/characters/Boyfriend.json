@@ -1,0 +1,52 @@
+{
+  "name": "Boyfriend",
+  "assetPath": "BOYFRIEND",
+  "flipX": true,
+  "offsets": [17, 14],
+  "cameraOffsets": [-18, 36],
+  "death": {
+    "cameraOffsets": [-73, 42]
+  },
+  "animations": [
+    {
+      "name": "idle",
+      "prefix": "BF idle dance"
+    },
+    {
+      "name": "singLEFT",
+      "prefix": "BF NOTE LEFT"
+    },
+    {
+      "name": "singDOWN",
+      "prefix": "BF NOTE DOWN"
+    },
+    {
+      "name": "singUP",
+      "prefix": "BF NOTE UP"
+    },
+    {
+      "name": "singRIGHT",
+      "prefix": "BF NOTE RIGHT"
+    },
+    {
+      "name": "singLEFTmiss",
+      "prefix": "BF NOTE LEFT MISS"
+    },
+    {
+      "name": "singDOWNmiss",
+      "prefix": "BF NOTE DOWN MISS"
+    },
+    {
+      "name": "singUPmiss",
+      "prefix": "BF NOTE UP MISS"
+    },
+    {
+      "name": "singRIGHTmiss",
+      "prefix": "BF NOTE RIGHT MISS"
+    },
+    {
+      "name": "hey",
+      "prefix": "BF HEY!!"
+    }
+  ]
+}
