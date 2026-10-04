@@ -47,10 +47,10 @@ setup-bin:
 	cp -r $(RES_DIR) $(BIN_DIR)
 
 $(DEBUG_TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS_COMMON) $^ -o $@ -O2 -g $(INCLUDES) $(LIBS) $(LIBPATHS)
+	$(CXX) $(CXXFLAGS_COMMON) $(CXXFLAGS) $^ -o $@ -O2 -g $(INCLUDES) $(LIBS) $(LIBPATHS) $(LDFLAGS)
 
 $(RELEASE_TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS_COMMON) $^ -o $@ -O3 $(INCLUDES) $(LIBS) $(LIBPATHS)
+	$(CXX) $(CXXFLAGS_COMMON) $(CXXFLAGS) $^ -o $@ -O3 $(INCLUDES) $(LIBS) $(LIBPATHS) $(LDFLAGS)
 
 # quick: $(SRC)
 # 	$(CXX) $(CXXFLAGS_COMMON) $^ -o ./$(BIN_FILE) -O1 $(INCLUDES) $(LIBS) $(LIBPATHS)
@@ -58,6 +58,9 @@ $(RELEASE_TARGET): $(SRC)
 build: BIN_DIR = $(DEBUG_BIN_DIR)
 build: setup-bin $(DEBUG_TARGET)
 
+ifeq ($(OS),Windows_NT)
+	build-release: LDFLAGS = -mwindows
+endif
 build-release: BIN_DIR = $(RELEASE_BIN_DIR)
 build-release: setup-bin $(RELEASE_TARGET)
 
