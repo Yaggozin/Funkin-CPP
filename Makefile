@@ -1,18 +1,18 @@
-# Comp Vars
+# |================================|
+# |  Funkin C++          Makefile  |
+# |================================|
+
 CXX = g++
-CXXFLAGS_COMMON = -Wall -std=c++17
+CXXFLAGS_COMMON := -Wall -std=c++17
 
-# Libraries
-LIBS = -lraylib -lopengl32 -lgdi32 -lwinmm -ldwmapi
+LIBS := -lraylib
+ifeq ($(OS),Windows_NT)
+	LIBS +=-lopengl32 -lgdi32 -lwinmm -ldwmapi
+endif
 
-# Includes
-INCLUDES = -Iinclude -Isrc -Iraylib/include
-
-# Library paths
-LIBPATHS = -L. -Lraylib/lib
-
-# Files List
-SRC = src/core/main.cpp \
+LIBPATHS := -L. -Lraylib/lib
+INCLUDES := -Iinclude -Isrc -Iraylib/include
+SRC := src/core/main.cpp \
       src/ui/editorUI.cpp \
       src/core/playstate.cpp \
       src/core/paths.cpp \
@@ -21,67 +21,53 @@ SRC = src/core/main.cpp \
       src/stages/stage.cpp \
       src/ui/strumline.cpp \
       src/ui/health.cpp \
-      src/debug/chartEditor.cpp \
-#     src/name.cpp \
+      src/debug/chartEditor.cpp
 
-# External source
 SRC += include/json11.cpp
 
-# Executable names
-DEBUG_TARGET = bin/debug/funkin_debug.exe
-RELEASE_TARGET = bin/release/funkin.exe
+RES_DIR = ./resources
 
-# Create folders if they don't exist
-$(shell mkdir -p bin/release bin/test)
+BIN_DIR = ./bin
+BIN_FILE = funkin
+ifeq ($(OS),Windows_NT)
+	BIN_FILE := $(BIN_FILE).exe
+endif
 
-# Debug Mode
-debug: CXXFLAGS = -O2 -Wall
-debug: $(DEBUG_TARGET)
-	@echo "Debug mode compiled! Run: ./funkin.exe"
+DEBUG_BIN_DIR := $(BIN_DIR)/debug
+RELEASE_BIN_DIR := $(BIN_DIR)/release
 
-# Release Mode
-release: CXXFLAGS = $(CXXFLAGS_COMMON) -O2 -DNDEBUG -static-libgcc -static-libstdc++
-release: LDFLAGS = -mwindows
-release: $(RELEASE_TARGET)
-	@echo "RELEASE mode compiled! Executable at: $(RELEASE_TARGET)"
+DEBUG_TARGET := $(DEBUG_BIN_DIR)/$(BIN_FILE)
+RELEASE_TARGET := $(RELEASE_BIN_DIR)/$(BIN_FILE)
 
-# Debug build rule
+all: build
+
+setup-bin:
+	mkdir -p $(BIN_DIR)
+	cp raylib/lib/raylib.dll $(BIN_DIR)
+	cp -r $(RES_DIR) $(BIN_DIR)
+
 $(DEBUG_TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(INCLUDES) $(LIBPATHS) $(LIBS)
+	$(CXX) $(CXXFLAGS_COMMON) $^ -o $@ -O2 -g $(INCLUDES) $(LIBS) $(LIBPATHS)
 
-# Release build rule
 $(RELEASE_TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(INCLUDES) $(LIBPATHS) $(LIBS) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS_COMMON) $^ -o $@ -O3 $(INCLUDES) $(LIBS) $(LIBPATHS)
 
-# Build everything
-all: debug release
-	@echo "Debug and Release builds complete!"
+# quick: $(SRC)
+# 	$(CXX) $(CXXFLAGS_COMMON) $^ -o ./$(BIN_FILE) -O1 $(INCLUDES) $(LIBS) $(LIBPATHS)
 
-# Quick compile (without folders)
-quick:
-	$(CXX) $(CXXFLAGS_COMMON) -O2 -o funkin.exe $(SRC) $(INCLUDES) $(LIBPATHS) $(LIBS)
+build: BIN_DIR = $(DEBUG_BIN_DIR)
+build: setup-bin $(DEBUG_TARGET)
 
-# Create package for friend in bin/test
-package: release
-	@echo "Creating package for friend in bin/test..."
-	mkdir -p bin/test
-	cp bin/release/funkin.exe bin/test/
-	cp raylib/lib/raylib.dll bin/test/
-	cp -r resources bin/test/
-	@echo "Package created at bin/test/"
+build-release: BIN_DIR = $(RELEASE_BIN_DIR)
+build-release: setup-bin $(RELEASE_TARGET)
 
-# Clean package
-cleanpackage:
-	rm -rf bin/test 2>nul
-	@echo "Package cleaned!"
+run: build
+	$(DEBUG_TARGET)
 
-# Cleanup
+run-release: build-release
+	$(RELEASE_TARGET)
+
 clean:
-	rm -f bin/debug/*.exe bin/release/*.exe 2>nul
-	@echo "Cleanup complete!"
+	rm -rf $(BIN_DIR)
 
-cleanall: clean
-	rm -rf bin 2>nul
-	@echo "Complete cleanup!"
-
-.PHONY: debug release all clean cleanall quick package cleanpackage
+.PHONY: setup-bin build build-release run run-release clean
