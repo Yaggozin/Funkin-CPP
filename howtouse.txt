@@ -1,4 +1,5 @@
-make debug    # Compile with debug symbols for you
-make release  # Compile optimized version for your friend
-make all      # Compile both
-make clean    # Remove compiled files
+make build          # Compile with debug symbols for you
+make build-release  # Compile optimized version for your friend
+make run            # Compile in debug mode and run the executable
+make run-release    # Compile in release mode and run the executable
+make clean          # Remove the bin folder
